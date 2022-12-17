@@ -28,6 +28,6 @@ setup(name='graph_matern',
       version='0.1',
       license='MIT',
       packages=find_packages(exclude=["examples*"]),
-      python_requires='>=3.8',
+      python_requires='>=3.6',
       install_requires=requirements,
       extras_require=extra_requirements)

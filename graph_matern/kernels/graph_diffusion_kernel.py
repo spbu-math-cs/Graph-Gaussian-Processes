@@ -46,7 +46,7 @@ class GraphDiffusionKernel(gpflow.kernels.Kernel):
         super().__init__(active_dims=active_dims)
 
     def eval_S(self, kappa, sigma_f):
-        S = tf.exp(self.eigenvalues*kappa*kappa/4)
+        S = tf.exp(-0.5*self.eigenvalues*kappa*kappa)
         S = tf.multiply(S, self.num_verticies/tf.reduce_sum(S))
         S = tf.multiply(S, sigma_f)
         return S
