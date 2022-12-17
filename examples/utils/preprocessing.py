@@ -8,6 +8,7 @@ import osmnx
 from shapely.geometry import Point
 from shapely.ops import nearest_points
 from .utils import cut
+import geopandas as gpd
 
 
 def load_cora(num_train, num_test):
@@ -89,7 +90,7 @@ def load_PEMS(num_train=250, dtype=np.float64):
             G = pickle.load(f)
 
     G = osmnx.get_undirected(G)  # Matern GP supports only undirected graphs.
-
+    
     # Graph cleaning up
     for _ in range(2):
         out_degree = G.degree
@@ -109,12 +110,15 @@ def load_PEMS(num_train=250, dtype=np.float64):
     coords = np_coords
 
     sensor_ind_to_node = {}
+    print(G.graph["crs"])
     # Inserting sensors into a graph. During insertion, the edge containing the sensor is cut
+    G = osmnx.project_graph(G, to_crs=3857)
     for point_id in range(num_points):
         sensor_ind_to_node[point_id] = len(G)  # adding new vertex at the end
-        sensor_point = Point(coords[point_id, 1], coords[point_id, 0])
-        u, v, key, geom = osmnx.get_nearest_edge(G, (sensor_point.y, sensor_point.x), return_geom=True)
+        sensor_point = gpd.GeoSeries(Point(coords[point_id, 1], coords[point_id, 0]), crs=4326).to_crs(3857)[0]
+        u, v, key = osmnx.distance.nearest_edges(G, sensor_point.x, sensor_point.y)
         edge = G.edges[(u, v, key)]
+        geom = edge["geometry"]
         G.remove_edge(u, v, key)
         edge_1_geom, edge_2_geom = cut(geom, geom.project(sensor_point))
         l_ratio = geom.project(sensor_point, normalized=True)
@@ -123,7 +127,8 @@ def load_PEMS(num_train=250, dtype=np.float64):
         G.add_node(len(G), x=new_vertex.x, y=new_vertex.y)
         G.add_edge(u, len(G)-1, length=l_1, geometry=edge_1_geom)
         G.add_edge(len(G)-1, v, length=l_2, geometry=edge_2_geom)
-
+    G = osmnx.project_graph(G, to_crs=4326)
+    G = osmnx.get_undirected(G)
     # Weights are inversely proportional to the length of the road
     lengths = nx.get_edge_attributes(G, 'length')
     lengths_list = [length for length in lengths.values()]
