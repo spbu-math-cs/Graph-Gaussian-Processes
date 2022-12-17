@@ -16,10 +16,15 @@ class GPInducingVariables(InducingVariables):
        Other coordinates are matched with points on \R^d.
        Note that vertex indices are not trainable.
     """
-    def __init__(self, x):
+    def __init__(self, x, out_dim):
         self.x_id = x[:, :1]
         if len(x.shape) > 1:
             self.x_v = gpflow.Parameter(x[:, 1:], dtype=gpflow.default_float())
+
+        self.shape_ = list(x.shape)
+        print(self.shape_)
+        self.shape_.append(out_dim)
+        self.shape_ = tf.convert_to_tensor(self.shape_, dtype=tf.int32)
 
         self.N = self.x_id.shape[0]
 
@@ -31,6 +36,13 @@ class GPInducingVariables(InducingVariables):
     def GP_IV(self):
         return tf.concat([self.x_id, self.x_v], axis=1)
 
+    @property
+    def num_inducing(self) -> tf.Tensor:
+        return self.x_id.shape[0]
+
+    @property
+    def shape(self):
+        return self.shape_
 
 @cov.Kuu.register(GPInducingVariables, gpflow.kernels.Kernel)
 def Kuu_kernel_GPinducingvariables(
