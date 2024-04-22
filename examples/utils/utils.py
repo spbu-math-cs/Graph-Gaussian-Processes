@@ -6,6 +6,7 @@ from shapely.geometry import Point, LineString
 def cut(line, distance):
     # Cuts a line in two at a distance from its starting point
     if distance <= 0.0 or distance >= line.length:
+        print('Failed to cut the edge')
         return [LineString(line)]
     coords = list(line.coords)
     for i, p in enumerate(coords):
@@ -13,9 +14,11 @@ def cut(line, distance):
         if pd == distance:
             return [
                 LineString(coords[:i+1]),
-                LineString(coords[i:])]
+                LineString(coords[i:]),
+            ]
         if pd > distance:
             cp = line.interpolate(distance)
             return [
                 LineString(coords[:i] + [(cp.x, cp.y)]),
-                LineString([(cp.x, cp.y)] + coords[i:])]
+                LineString([(cp.x, cp.y)] + coords[i:]),
+            ]

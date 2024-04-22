@@ -116,10 +116,15 @@ def load_PEMS(num_train=250, dtype=np.float64):
     for point_id in range(num_points):
         sensor_ind_to_node[point_id] = len(G)  # adding new vertex at the end
         sensor_point = gpd.GeoSeries(Point(coords[point_id, 1], coords[point_id, 0]), crs=4326).to_crs(3857)[0]
+        
         u, v, key = osmnx.distance.nearest_edges(G, sensor_point.x, sensor_point.y)
         edge = G.edges[(u, v, key)]
         geom = edge["geometry"]
-        G.remove_edge(u, v, key)
+        u_, v_ = u, v
+        if (G.nodes[u]['x']-geom.coords[0][0])**2 + (G.nodes[u]['y']-geom.coords[0][1])**2 > 1e-6:
+            u, v = v, u
+        G.remove_edge(u_, v_, key)
+        
         edge_1_geom, edge_2_geom = cut(geom, geom.project(sensor_point))
         l_ratio = geom.project(sensor_point, normalized=True)
         l_1, l_2 = l_ratio*edge['length'], (1-l_ratio)*edge['length']
@@ -129,6 +134,12 @@ def load_PEMS(num_train=250, dtype=np.float64):
         G.add_edge(len(G)-1, v, length=l_2, geometry=edge_2_geom)
     G = osmnx.project_graph(G, to_crs=4326)
     G = osmnx.get_undirected(G)
+
+    new_G_labels = {node: id_ for id_, node in enumerate(G.nodes)}
+    G = nx.relabel_nodes(G, new_G_labels)
+    sensor_ind_to_node = {sensor_ind: new_G_labels[node] 
+        for (sensor_ind, node) in sensor_ind_to_node.items()}
+
     # Weights are inversely proportional to the length of the road
     lengths = nx.get_edge_attributes(G, 'length')
     lengths_list = [length for length in lengths.values()]
@@ -167,5 +178,5 @@ def load_PEMS(num_train=250, dtype=np.float64):
     train_vertex, test_vertex = random_perm[:num_train], random_perm[num_train:]
     x_train, x_test = x[train_vertex], x[test_vertex]
     y_train, y_test = y[train_vertex], y[test_vertex]
-
+    
     return G, (x_train, y_train), (x_test, y_test), (x, y)
