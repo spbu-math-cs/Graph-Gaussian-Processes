@@ -1,3 +1,7 @@
+# Deprecation Notice ⚠️
+This project is no longer actively maintained.
+We highly recommend using [GeometricKernels](https://github.com/geometric-kernels/GeometricKernels) instead.
+
 # Matern Gaussian Processes on Graphs
 
 
