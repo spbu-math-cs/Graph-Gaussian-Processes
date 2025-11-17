@@ -2,6 +2,10 @@
 This project is no longer actively maintained.
 We highly recommend using [GeometricKernels](https://github.com/geometric-kernels/GeometricKernels) instead.
 
+If you are interested in the PEMS dataset specifically, consider using the [pems-regression](https://github.com/vabor112/pems-regression) repo instead.
+
+❗The `l2_error` computed in the PEMS experiment (regression) has weird normalization: To get the standard RMSE from it, you need to multiply it by `sqrt(len(y_test.ravel()))`.
+
 # Matern Gaussian Processes on Graphs
 
 
